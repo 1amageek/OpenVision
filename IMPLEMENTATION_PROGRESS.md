@@ -36,8 +36,8 @@
 |---|---|
 | Native OpenVision behavior | 40 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
 | Native sanitizers | The same 40 tests passed with Address Sanitizer and Thread Sanitizer |
-| External provider | 3 tests passed against public commit `673ce03` from a separate SwiftPM package without SPI or `@testable` |
-| TensorRT package compatibility | 3 runtime-boundary tests passed against public commit `673ce03` |
+| External provider | Public `OpenVisionProviderFixture` commit `24982ec` passed 3 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `6348722` without SPI or `@testable` |
+| TensorRT package compatibility | Public `OpenVisionTensorRT` commit `eae92b3` passed 19 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `6348722` |
 | Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
 | Embedded WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 Embedded SDK and Unicode data tables |
 | Input storage | Packed/planar layout, address identity, typed borrow failure, transfer validation, release, and unavailable native access are tested |
@@ -52,7 +52,7 @@
 | 2. Clock, coordinate, and calibration | Complete | 31 Native tests, ASan, TSan, public external-provider and TensorRT compatibility, and Normal/Embedded WASM debug/release runtime |
 | 3. Jetson CUDA transfer probe | Complete | Public `OpenVisionTensorRT` commit `dc27ec9`; real CUDA transfer, ownership, byte verification, allocation, and p50/p95 evidence |
 | 4. RG10 GPU preprocessing | Complete | Public `OpenVisionTensorRT` commit `eb7d761`; 25 differential/golden cases, public Swift path, one H2D, one kernel, zero post-prepare frame allocations, and p50/p95 evidence |
-| 5. Semantic model manifest | Core complete; external publication pending | 40 Native tests, ASan, TSan, Normal/Embedded WASM debug/release runtime, and official RTMDet/DWPose evidence |
+| 5. Semantic model manifest | Complete | OpenVision `6348722`, OpenVisionTensorRT `eae92b3`, OpenVisionProviderFixture `24982ec`, 40 core tests, 19 TensorRT integration tests, 3 external-provider tests, sanitizers, Normal/Embedded WASM, and real Jetson CUDA differential execution |
 | 6. TensorRT engine and provider | Not started | Requires manifest and preprocessing |
 | 7. Camera-to-pose observation | Not started | Requires real provider execution |
 
