@@ -37,8 +37,8 @@
 |---|---|
 | Native OpenVision behavior | 41 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
 | Native sanitizers | The same 41 tests passed with Address Sanitizer and Thread Sanitizer |
-| External provider | Public `OpenVisionProviderFixture` commit `24982ec` passed 3 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `6348722` without SPI or `@testable` |
-| TensorRT package compatibility | Public `OpenVisionTensorRT` commit `eae92b3` passed 19 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `6348722` |
+| External provider | Public `OpenVisionProviderFixture` commit `c0ee50a` passed 3 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `69d0db2` without SPI or `@testable` |
+| TensorRT package compatibility | Public `OpenVisionTensorRT` commit `cf85b6e` passed 19 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `69d0db2` |
 | Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
 | Embedded WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 Embedded SDK and Unicode data tables |
 | Input storage | Packed/planar layout, address identity, typed borrow failure, transfer validation, release, and unavailable native access are tested |
@@ -54,7 +54,7 @@
 | 3. Jetson CUDA transfer probe | Complete | Public `OpenVisionTensorRT` commit `dc27ec9`; real CUDA transfer, ownership, byte verification, allocation, and p50/p95 evidence |
 | 4. RG10 GPU preprocessing | Complete | Public `OpenVisionTensorRT` commit `eb7d761`; 25 differential/golden cases, public Swift path, one H2D, one kernel, zero post-prepare frame allocations, and p50/p95 evidence |
 | 5. Semantic model manifest | Complete | 41 core tests, official ONNX output type/shape verification, sanitizers, Normal/Embedded WASM, published provider fixtures, and real Jetson CUDA differential execution |
-| 6. TensorRT engine and provider | Not started | Requires manifest and preprocessing |
+| 6. TensorRT engine and provider | In progress | Official RTMDet ONNX export checked with ONNX checker and ONNX Runtime; DWPose export and Jetson TensorRT engine execution remain |
 | 7. Camera-to-pose observation | Not started | Requires real provider execution |
 
 ## Known dependency defect
