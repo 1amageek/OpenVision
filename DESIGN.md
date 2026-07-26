@@ -123,6 +123,13 @@ normalization is represented as three scale and three bias values so a provider
 can apply it directly in a fused tensor-writing kernel. No OpenVision operation
 copies frame bytes while validating or carrying the manifest.
 
+Tensor dimensions distinguish a fixed extent, a bounded batch extent, and a
+bounded runtime-variable extent. Detector output count uses the variable form:
+the RTMDet export produces `dets[1,N,5]` and `labels[1,N]`, where `N` is
+bounded by the manifest rather than asserted to be a fixed output length.
+Element types preserve the exported representation, including 64-bit class
+indices.
+
 The portable runtime fixture owns one initialized stack word, lends its original
 address through a private `CVPixelBuffer` protocol conformance, constructs the
 real Core Media and OpenVision input path, and verifies address identity before

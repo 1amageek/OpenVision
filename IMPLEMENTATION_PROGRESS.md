@@ -25,7 +25,8 @@
 - [x] Embedded WASM compile, link, and runtime smoke
 - [x] Validated backend-neutral semantic model manifest
 - [x] Ordered model stages and typed detector-to-region dependencies
-- [x] Tensor shape, element type, meaning, and SimCC contracts
+- [x] Fixed, bounded-batch, and bounded-variable tensor shape contracts
+- [x] Exact tensor element types, including 64-bit detector class indices
 - [x] Complete request-specific body and hand joint vocabulary validation
 - [x] Exact checkpoint provenance and SHA-256 identity
 - [x] Per-channel tensor normalization and region-affine semantics
@@ -34,8 +35,8 @@
 
 | Check | Current evidence |
 |---|---|
-| Native OpenVision behavior | 40 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
-| Native sanitizers | The same 40 tests passed with Address Sanitizer and Thread Sanitizer |
+| Native OpenVision behavior | 41 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
+| Native sanitizers | The same 41 tests passed with Address Sanitizer and Thread Sanitizer |
 | External provider | Public `OpenVisionProviderFixture` commit `24982ec` passed 3 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `6348722` without SPI or `@testable` |
 | TensorRT package compatibility | Public `OpenVisionTensorRT` commit `eae92b3` passed 19 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `6348722` |
 | Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
@@ -52,7 +53,7 @@
 | 2. Clock, coordinate, and calibration | Complete | 31 Native tests, ASan, TSan, public external-provider and TensorRT compatibility, and Normal/Embedded WASM debug/release runtime |
 | 3. Jetson CUDA transfer probe | Complete | Public `OpenVisionTensorRT` commit `dc27ec9`; real CUDA transfer, ownership, byte verification, allocation, and p50/p95 evidence |
 | 4. RG10 GPU preprocessing | Complete | Public `OpenVisionTensorRT` commit `eb7d761`; 25 differential/golden cases, public Swift path, one H2D, one kernel, zero post-prepare frame allocations, and p50/p95 evidence |
-| 5. Semantic model manifest | Complete | OpenVision `6348722`, OpenVisionTensorRT `eae92b3`, OpenVisionProviderFixture `24982ec`, 40 core tests, 19 TensorRT integration tests, 3 external-provider tests, sanitizers, Normal/Embedded WASM, and real Jetson CUDA differential execution |
+| 5. Semantic model manifest | Complete | 41 core tests, official ONNX output type/shape verification, sanitizers, Normal/Embedded WASM, published provider fixtures, and real Jetson CUDA differential execution |
 | 6. TensorRT engine and provider | Not started | Requires manifest and preprocessing |
 | 7. Camera-to-pose observation | Not started | Requires real provider execution |
 

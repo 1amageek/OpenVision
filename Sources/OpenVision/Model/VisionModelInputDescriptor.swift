@@ -20,6 +20,7 @@ public struct VisionModelInputDescriptor: Sendable, Hashable {
         case float16
         case int8
         case int32
+        case int64
     }
 
     public struct RGBValues: Sendable, Hashable {

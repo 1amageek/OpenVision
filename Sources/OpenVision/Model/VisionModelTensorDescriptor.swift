@@ -2,6 +2,7 @@ public struct VisionModelTensorDescriptor: Sendable, Hashable {
     public enum Dimension: Sendable, Hashable {
         case fixed(Int)
         case batch(maximum: Int)
+        case variable(maximum: Int)
     }
 
     public enum Axis: Sendable, Hashable {
@@ -43,6 +44,8 @@ public struct VisionModelTensorDescriptor: Sendable, Hashable {
                 value = fixed
             case .batch(let maximum):
                 value = maximum
+            case .variable(let maximum):
+                value = maximum
             }
             guard value > 0 else {
                 throw .invalidTensorDimension(id)
@@ -57,7 +60,7 @@ public struct VisionModelTensorDescriptor: Sendable, Hashable {
             guard
                 shape.count == 3,
                 case .batch = shape[0],
-                case .fixed(maximumCount) = shape[1],
+                case .variable(maximumCount) = shape[1],
                 case .fixed(5) = shape[2]
             else {
                 throw .incompatibleTensorShape(id)
@@ -69,7 +72,7 @@ public struct VisionModelTensorDescriptor: Sendable, Hashable {
             guard
                 shape.count == 2,
                 case .batch = shape[0],
-                case .fixed(maximumCount) = shape[1]
+                case .variable(maximumCount) = shape[1]
             else {
                 throw .incompatibleTensorShape(id)
             }

@@ -3,6 +3,50 @@ import Testing
 
 @Suite("Semantic model manifest")
 struct VisionModelManifestTests {
+    @Test("Detector tensors preserve bounded dynamic output shapes")
+    func detectorTensorShapes() throws {
+        let detectionsID = VisionModelTensorID(rawValue: "dets")
+        let labelsID = VisionModelTensorID(rawValue: "labels")
+        let detections = try VisionModelTensorDescriptor(
+            id: detectionsID,
+            elementType: .float32,
+            shape: [
+                .batch(maximum: 1),
+                .variable(maximum: 100),
+                .fixed(5)
+            ],
+            meaning: .personDetections(maximumCount: 100)
+        )
+        let labels = try VisionModelTensorDescriptor(
+            id: labelsID,
+            elementType: .int64,
+            shape: [
+                .batch(maximum: 1),
+                .variable(maximum: 100)
+            ],
+            meaning: .classIndices(maximumCount: 100)
+        )
+
+        #expect(detections.shape[1] == .variable(maximum: 100))
+        #expect(labels.elementType == .int64)
+        #expect(
+            throws:
+                VisionModelManifestError
+                    .incompatibleTensorShape(detectionsID)
+        ) {
+            _ = try VisionModelTensorDescriptor(
+                id: detectionsID,
+                elementType: .float32,
+                shape: [
+                    .batch(maximum: 1),
+                    .fixed(100),
+                    .fixed(5)
+                ],
+                meaning: .personDetections(maximumCount: 100)
+            )
+        }
+    }
+
     @Test("Valid manifest preserves semantic stage contracts")
     func validManifest() throws {
         let manifest = try OpenVisionTestFixture.model()
@@ -31,7 +75,7 @@ struct VisionModelManifestTests {
             elementType: .float32,
             shape: [
                 .batch(maximum: 1),
-                .fixed(1),
+                .variable(maximum: 1),
                 .fixed(5)
             ],
             meaning: .personDetections(maximumCount: 1)
