@@ -91,7 +91,7 @@ public struct DetectHumanBodyPoseRequest:
             environment: environment
         )
 
-        let executionID = environment.executionSequence.next(
+        let executionID = try environment.executionSequence.next(
             sessionID: providerSession.descriptor.id
         )
         if Task.isCancelled {

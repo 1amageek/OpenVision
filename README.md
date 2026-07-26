@@ -12,9 +12,10 @@ OpenCoreMedia sample
     -> immutable layout + storage descriptor
         -> selected transfer contract
             -> VisionImageInput scoped lease
-                -> Vision request
-                    -> injected provider session
-                        -> typed observation values
+                -> clock + coordinate + calibration provenance
+                    -> Vision request
+                        -> injected provider session
+                            -> typed observation values
 ```
 
 ## Provider injection
@@ -38,6 +39,14 @@ let observations = try await VisionContext.withProvider(
 
 There is no mutable global provider registry and no CPU or alternate-provider
 fallback.
+
+Pose observations preserve the source frame, clocked timestamp, normalized
+coordinate-space convention, calibration revision, and transform revision when
+available. Different clock domains or stale calibration/transform revisions
+fail explicitly instead of being treated as equivalent coordinates.
+Pose observation construction requires explicit provenance, and coordinate
+transforms return a located point carrying the destination space and applied
+revision.
 
 ## Verification
 

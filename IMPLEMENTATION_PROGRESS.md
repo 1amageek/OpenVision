@@ -14,6 +14,11 @@
 - [x] Storage access, memory-domain, ownership, and transfer descriptors
 - [x] Explicit session transfer selection without fallback
 - [x] Address-preserving generic `Span` borrow with typed body failure
+- [x] Typed clock domains, timestamps, and validity ranges
+- [x] Explicit image coordinate origins, units, axes, and conversions
+- [x] Revisioned camera intrinsics and lens-distortion calibration
+- [x] Revisioned clocked 2D transforms with compatibility failures
+- [x] Observation provenance propagated from image input
 - [x] Native behavior tests
 - [x] External-package provider conformance fixture
 - [x] Normal WASM compile, link, and runtime smoke
@@ -23,8 +28,8 @@
 
 | Check | Current evidence |
 |---|---|
-| Native OpenVision behavior | 22 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
-| Native sanitizers | The same 22 tests passed with Address Sanitizer and Thread Sanitizer |
+| Native OpenVision behavior | 31 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
+| Native sanitizers | The same 31 tests passed with Address Sanitizer and Thread Sanitizer |
 | External provider | 3 tests passed from a separate SwiftPM package without SPI or `@testable` |
 | Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
 | Embedded WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 Embedded SDK and Unicode data tables |
@@ -37,7 +42,7 @@
 | Milestone | Status | Gate evidence |
 |---|---|---|
 | 1. Input layout, storage, and transfer | Complete | 22 Native tests, ASan, TSan, and Normal/Embedded WASM debug/release runtime |
-| 2. Clock, coordinate, and calibration | Not started | Milestone 1 must close first |
+| 2. Clock, coordinate, and calibration | Verification in progress | 31 Native tests, ASan, TSan, and Normal/Embedded WASM debug/release runtime |
 | 3. Jetson CUDA transfer probe | Not started | Requires milestone 2 |
 | 4. RG10 GPU preprocessing | Not started | Requires measured transfer probe |
 | 5. Semantic model manifest | Not started | Requires pose-paper and model evidence |
@@ -57,8 +62,6 @@ regular WASM.
 
 ## Tracked next work
 
-- [ ] Add complete coordinate-space, calibration, clock-domain, and transform
-  provenance types before publishing 3D or cross-camera geometry.
 - [ ] Add a stateful request only with ordered timestamp, reset, cancellation,
   and bounded-history tests.
 - [ ] Select a semantic body/hand model before implementing successful

@@ -46,7 +46,44 @@ enum OpenVisionPortableSmoke {
                 decodeTimeStamp: .invalid
             )
         )
-        let input = try VisionImageInput(sampleBuffer: sample)
+        let clock = VisionClockDomain(
+            id: "portable-clock",
+            epoch: 1,
+            kind: .deviceMonotonic
+        )
+        let validity = try VisionTimeRange(
+            range: CMTimeRange(
+                start: .zero,
+                duration: CMTime(value: 1, timescale: 1)
+            ),
+            clockDomain: clock
+        )
+        let calibratedAt = try VisionTimestamp(
+            time: .zero,
+            clockDomain: clock
+        )
+        let calibration = try VisionCameraCalibration(
+            reference: VisionCalibrationReference(
+                id: "portable-camera",
+                revision: 1
+            ),
+            source: "portable-camera",
+            calibratedAt: calibratedAt,
+            validity: validity,
+            intrinsics: VisionCameraIntrinsics(
+                matrix: .identity,
+                referenceDimensions: dimensions
+            )
+        )
+        let input = try VisionImageInput(
+            sampleBuffer: sample,
+            frameID: VisionFrameID(
+                source: "portable-camera",
+                sequence: 1
+            ),
+            clockDomain: clock,
+            calibration: calibration
+        )
         let borrowedAddress = try input.withReadBytes {
             address(of: $0)
         }
@@ -55,6 +92,13 @@ enum OpenVisionPortableSmoke {
         precondition(input.layout.pixelFormat == .bgra32)
         precondition(input.layout.byteCount == 8)
         precondition(input.storage == .retainedHost)
+        precondition(input.timestamp == calibratedAt)
+        precondition(input.sourceCoordinateSpace.origin == .upperLeft)
+        precondition(input.observationCoordinateSpace.origin == .lowerLeft)
+        precondition(
+            input.observationProvenance.calibration ==
+                calibration.reference
+        )
         precondition(borrowedAddress == UInt(bitPattern: baseAddress))
         precondition(
             input.storage.transferModes.contains(

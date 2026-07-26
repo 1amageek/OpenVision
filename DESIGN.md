@@ -107,6 +107,63 @@ Swift 6.4 regular-WASI runtime traps while constructing that cross-module
 generic class. This dependency defect is tracked separately and is not hidden
 by claiming that the generic convenience path passed.
 
+## Clock, coordinate, and calibration provenance
+
+OpenVision does not infer a clock identity from a numeric `CMTime`.
+`VisionTimestamp` is the pair of a numeric time and a `VisionClockDomain`.
+The domain includes an identifier, epoch, and source kind. Equal numeric values
+from unequal domains are not comparable evidence.
+
+```text
+Capture frame
+  ├─ CMSampleTimingInfo.presentationTimeStamp
+  ├─ VisionClockDomain(id + epoch)
+  ├─ VisionFrameID(source + sequence)
+  └─ VisionCameraCalibration(revision + validity)
+          │
+          ▼
+VisionImageInput
+  ├─ source pixels: upper-left, x right, y down
+  └─ normalized image: lower-left, x right, y up
+          │
+          ▼
+VisionObservationProvenance
+```
+
+`VisionCameraCalibration` is an immutable snapshot. It contains the camera
+source, revision, calibration timestamp, validity interval, pinhole intrinsics,
+reference dimensions, optional pixel size, and optional radial-tangential lens
+distortion. It intentionally does not claim a camera-to-room transform.
+Room/appliance extrinsics belong to the layer that owns room geometry.
+
+`VisionCoordinateTransform2D` binds a matrix to source and destination space
+identifiers, transform revision, clocked validity interval, and optional exact
+calibration revision. Applying a transform checks all of these values before
+matrix arithmetic. A clock mismatch, source-space mismatch, calibration
+mismatch, expired transform, or invalid homogeneous scale is a typed failure;
+there is no identity fallback. The operation accepts and returns
+`VisionLocatedPoint2D`, so the destination space, timestamp, calibration, and
+applied transform revision remain attached to the result rather than becoming
+out-of-band caller state.
+
+Body and hand observation initializers require an explicit
+`VisionObservationProvenance`. Tests may deliberately use
+`unattributedNormalizedImage`, but a provider cannot omit provenance and obtain
+that value through a default argument.
+
+The following Apple declarations were checked in the Xcode 27 beta interface
+and with `remark` on 2026-07-26:
+
+| Apple declaration | OpenVision declaration | Difference and reason |
+|---|---|---|
+| `Vision.CoordinateOrigin` | `CoordinateOrigin` | Same upper-left/lower-left cases |
+| `Vision.NormalizedPoint` image conversion | `NormalizedPoint` conversion using `CVPixelDimensions` and `VisionPoint2D` | CoreGraphics is unavailable on portable targets |
+| `VisionObservation.timeRange` | `timeRange` plus `VisionObservationProvenance.timestamp` | The portable provenance adds an explicit clock domain and rejects inconsistent ranges |
+| `HumanBodyPose3DObservation.cameraOriginMatrix` | Future 3D observation transform | 2D pose does not fabricate a 3D camera transform |
+| `AVCameraCalibrationData.intrinsicMatrix` and reference dimensions | `VisionCameraIntrinsics` | Portable row-major value type; no Objective-C or simd dependency |
+| `AVCameraCalibrationData` distortion lookup tables | `VisionLensDistortionModel.radialTangential` | Bounded coefficients avoid copying opaque frame-sized tables; additional models require explicit typed cases |
+| `CMClock` / `CMSync` clock identity and conversion | `VisionClockDomain`, `VisionTimestamp`, `VisionTimeRange` | OpenCoreMedia owns clock execution; OpenVision carries immutable provenance |
+
 ## Concurrency
 
 - Short counters and input-owner state use `Mutex`.

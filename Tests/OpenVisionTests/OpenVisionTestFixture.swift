@@ -232,7 +232,8 @@ actor OpenVisionTestProviderSession:
             confidence: 0.9,
             timeRange: timeRange,
             originatingRequestDescriptor: request.descriptor,
-            joints: [.nose: joint]
+            joints: [.nose: joint],
+            provenance: input.observationProvenance
         )
         return [observation]
     }
@@ -275,7 +276,8 @@ actor OpenVisionTestProviderSession:
             ),
             originatingRequestDescriptor: request.descriptor,
             chirality: .right,
-            joints: [.indexTip: joint]
+            joints: [.indexTip: joint],
+            provenance: input.observationProvenance
         )
         return [observation]
     }

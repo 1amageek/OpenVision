@@ -22,6 +22,9 @@ public indirect enum VisionError: Error, Sendable, Equatable {
     case invalidImageAccessInvocationCount(Int)
     case imageAccessFailure(operation: String)
     case inputReleased
+    case temporal(VisionTemporalError)
+    case coordinate(VisionCoordinateError)
+    case calibration(VisionCalibrationError)
     case invalidGeometry(VisionGeometryError)
     case invalidConfidence(Float)
     case jointNameMismatch(expected: String, actual: String)

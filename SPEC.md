@@ -262,10 +262,32 @@ normalized image coordinates, display coordinates, and camera-relative 3D
 coordinates. Mirroring and rotation are metadata-driven. Callers must not need
 device-specific coordinate guesses.
 
+The initial 2D contract uses upper-left source pixels and Apple-compatible
+lower-left normalized image coordinates. Coordinate-space values state units,
+dimensionality, handedness, and axis directions. A clocked observation carries
+the exact source clock domain rather than treating an unqualified `CMTime` as
+globally comparable.
+
+Camera calibration is an immutable, source-bound, revisioned snapshot with a
+clocked validity interval. The portable initial contract includes a pinhole
+intrinsic matrix, its reference image dimensions, optional physical pixel size,
+and optional bounded radial-tangential distortion coefficients. Camera-to-room
+or camera-to-appliance extrinsics remain outside OpenVision.
+
 Transforms are immutable revisioned values. A transform cannot be applied when
 its source space, destination space, clock domain, calibration revision, or
 validity interval is incompatible with the geometry being transformed. Such a
 case is a typed failure, not an identity-transform fallback.
+
+A coordinate-transform operation must return geometry that retains the
+destination coordinate-space identifier, timestamp, calibration reference, and
+applied transform revision. Returning a bare numeric point and relying on the
+caller to preserve that provenance is not sufficient.
+
+Body and hand pose observations require explicit provenance at construction.
+An unattributed value may be selected deliberately for synthetic fixtures, but
+must not be installed through a default argument in a production observation
+initializer.
 
 Room or appliance geometry and camera-to-room calibration are not owned by
 OpenVision. OpenVision preserves sufficient camera-space provenance for an

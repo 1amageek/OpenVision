@@ -12,6 +12,10 @@ public final class VisionImageInput: Sendable {
     public let layout: VisionImageLayout
     public let storage: VisionImageStorageDescriptor
     public let timing: CMSampleTimingInfo
+    public let timestamp: VisionTimestamp?
+    public let sourceCoordinateSpace: VisionCoordinateSpace
+    public let observationCoordinateSpace: VisionCoordinateSpace
+    public let calibration: VisionCameraCalibration?
 
     private let state: Mutex<State>
 
@@ -35,7 +39,9 @@ public final class VisionImageInput: Sendable {
         sampleBuffer: any CMSampleBuffer,
         orientation: VisionImageOrientation = .up,
         frameID: VisionFrameID? = nil,
-        storage: VisionImageStorageDescriptor = .retainedHost
+        storage: VisionImageStorageDescriptor = .retainedHost,
+        clockDomain: VisionClockDomain? = nil,
+        calibration: VisionCameraCalibration? = nil
     ) throws(VisionError) {
         let imageBuffer: any CVPixelBuffer & Sendable
         let timing: CMSampleTimingInfo
@@ -58,6 +64,19 @@ public final class VisionImageInput: Sendable {
         layout = try VisionImageLayout.snapshot(of: imageBuffer)
         self.storage = storage
         self.timing = timing
+        timestamp = try Self.timestamp(
+            timing: timing,
+            clockDomain: clockDomain
+        )
+        try Self.validate(
+            calibration: calibration,
+            frameID: frameID,
+            timestamp: timestamp
+        )
+        let source = frameID?.source
+        sourceCoordinateSpace = .sourcePixels(source: source)
+        observationCoordinateSpace = .normalizedImage(source: source)
+        self.calibration = calibration
         state = Mutex(State(sampleBuffer: sampleBuffer))
     }
 
@@ -65,6 +84,16 @@ public final class VisionImageInput: Sendable {
         state.withLock { state in
             state.sampleBuffer == nil
         }
+    }
+
+    public var observationProvenance: VisionObservationProvenance {
+        VisionObservationProvenance(
+            frameID: frameID,
+            timestamp: timestamp,
+            coordinateSpace: observationCoordinateSpace,
+            calibration: calibration?.reference,
+            transformRevision: nil
+        )
     }
 
     public func withReadBytes<Output>(
@@ -191,6 +220,61 @@ public final class VisionImageInput: Sendable {
             return value
         case .failure(let error):
             throw error
+        }
+    }
+
+    private static func timestamp(
+        timing: CMSampleTimingInfo,
+        clockDomain: VisionClockDomain?
+    ) throws(VisionError) -> VisionTimestamp? {
+        guard let clockDomain else {
+            return nil
+        }
+        do {
+            return try VisionTimestamp(
+                time: timing.presentationTimeStamp,
+                clockDomain: clockDomain
+            )
+        } catch let error {
+            throw .temporal(error)
+        }
+    }
+
+    private static func validate(
+        calibration: VisionCameraCalibration?,
+        frameID: VisionFrameID?,
+        timestamp: VisionTimestamp?
+    ) throws(VisionError) {
+        guard let calibration else {
+            return
+        }
+        guard calibration.source == frameID?.source else {
+            throw .calibration(
+                .incompatibleSource(
+                    expected: calibration.source,
+                    actual: frameID?.source
+                )
+            )
+        }
+        guard let timestamp else {
+            throw .calibration(.missingCaptureClockDomain)
+        }
+
+        let isValid: Bool
+        do {
+            isValid = try calibration.validity.contains(timestamp)
+        } catch {
+            throw .calibration(
+                .incompatibleClockDomain(
+                    expected: calibration.validity.clockDomain,
+                    actual: timestamp.clockDomain
+                )
+            )
+        }
+        guard isValid else {
+            throw .calibration(
+                .captureTimestampOutsideValidity(timestamp)
+            )
         }
     }
 }

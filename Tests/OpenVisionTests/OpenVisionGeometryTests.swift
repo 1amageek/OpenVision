@@ -41,7 +41,8 @@ struct OpenVisionGeometryTests {
             timeRange: nil,
             originatingRequestDescriptor:
                 .detectHumanBodyPoseRequest(.revision2),
-            joints: [.nose: nose]
+            joints: [.nose: nose],
+            provenance: .unattributedNormalizedImage
         )
 
         #expect(observation.joint(for: .nose) == nose)
@@ -71,7 +72,8 @@ struct OpenVisionGeometryTests {
                 confidence: 1,
                 timeRange: nil,
                 originatingRequestDescriptor: nil,
-                joints: [.nose: joint]
+                joints: [.nose: joint],
+                provenance: .unattributedNormalizedImage
             )
         }
     }

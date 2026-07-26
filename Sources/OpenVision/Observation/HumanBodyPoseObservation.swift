@@ -49,6 +49,7 @@ public struct HumanBodyPoseObservation:
     public let confidence: Float
     public let timeRange: CMTimeRange?
     public let originatingRequestDescriptor: RequestDescriptor?
+    public let provenance: VisionObservationProvenance
     public let leftHand: HumanHandPoseObservation?
     public let rightHand: HumanHandPoseObservation?
 
@@ -71,7 +72,8 @@ public struct HumanBodyPoseObservation:
         originatingRequestDescriptor: RequestDescriptor?,
         joints: [JointName: Joint],
         leftHand: HumanHandPoseObservation? = nil,
-        rightHand: HumanHandPoseObservation? = nil
+        rightHand: HumanHandPoseObservation? = nil,
+        provenance: VisionObservationProvenance
     ) throws(VisionError) {
         guard confidence.isFinite, (0 ... 1).contains(confidence) else {
             throw .invalidConfidence(confidence)
@@ -84,12 +86,18 @@ public struct HumanBodyPoseObservation:
                 )
             }
         }
+        do {
+            try provenance.validate(timeRange: timeRange)
+        } catch let error {
+            throw .temporal(error)
+        }
 
         self.id = id
         self.confidence = confidence
         self.timeRange = timeRange
         self.originatingRequestDescriptor =
             originatingRequestDescriptor
+        self.provenance = provenance
         self.joints = joints
         self.leftHand = leftHand
         self.rightHand = rightHand
