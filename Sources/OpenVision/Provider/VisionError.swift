@@ -8,9 +8,19 @@ public indirect enum VisionError: Error, Sendable, Equatable {
     case unsupportedPixelFormat(CVPixelFormatType)
     case unsupportedMemoryDomain(VisionMemoryDomain)
     case unsupportedInputOwnershipMode(VisionInputOwnershipMode)
+    case unsupportedImageStorageAccess(VisionImageStorageAccess)
+    case unsupportedTransferMode(VisionTransferMode)
+    case inputTransferModeUnavailable(
+        requested: VisionTransferMode,
+        available: Set<VisionTransferMode>
+    )
     case unsupportedComputeDevice(VisionComputeDeviceID)
     case invalidSampleBuffer(CMSampleBufferError)
     case invalidPixelBuffer(CVPixelBufferError)
+    case invalidImageLayout(VisionImageLayoutError)
+    case invalidImageStorage(VisionImageStorageError)
+    case invalidImageAccessInvocationCount(Int)
+    case imageAccessFailure(operation: String)
     case inputReleased
     case invalidGeometry(VisionGeometryError)
     case invalidConfidence(Float)

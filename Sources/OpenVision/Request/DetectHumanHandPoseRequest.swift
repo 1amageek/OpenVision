@@ -86,37 +86,14 @@ public struct DetectHumanHandPoseRequest:
         }
 
         let environment = try VisionContext.executionEnvironment()
-        guard environment.capabilities.requests.contains(descriptor)
-        else {
-            throw .unsupportedRequest(descriptor)
-        }
         let providerSession = environment.session
 
-        guard environment.capabilities.pixelFormats.contains(
-            input.pixelFormat
-        ) else {
-            throw .unsupportedPixelFormat(input.pixelFormat)
-        }
-        guard environment.capabilities.memoryDomains.contains(
-            input.memoryDomain
-        ) else {
-            throw .unsupportedMemoryDomain(input.memoryDomain)
-        }
-        guard environment.capabilities.inputOwnershipModes.contains(
-            input.ownershipMode
-        ) else {
-            throw .unsupportedInputOwnershipMode(
-                input.ownershipMode
-            )
-        }
-        for (computeStage, computeDevice) in computeDeviceSelections {
-            guard environment.capabilities.supports(
-                computeDevice,
-                for: computeStage
-            ) else {
-                throw .unsupportedComputeDevice(computeDevice)
-            }
-        }
+        try VisionInputValidation.validate(
+            input,
+            request: descriptor,
+            computeDeviceSelections: computeDeviceSelections,
+            environment: environment
+        )
 
         let executionID = environment.executionSequence.next(
             sessionID: providerSession.descriptor.id

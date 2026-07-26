@@ -95,6 +95,7 @@ struct OpenVisionTestProvider: VisionProvider {
         pixelFormats: Set<CVPixelFormatType> = [.bgra32],
         memoryDomains: Set<VisionMemoryDomain> = [.host],
         inputOwnershipModes: Set<VisionInputOwnershipMode> = [.retained],
+        transferModes: Set<VisionTransferMode> = [.retainedHostAccess],
         observationMarker: UInt64 = 1,
         behavior: Behavior = .success,
         shutdownFailure: VisionError? = nil,
@@ -113,7 +114,7 @@ struct OpenVisionTestProvider: VisionProvider {
             pixelFormats: pixelFormats,
             memoryDomains: memoryDomains,
             inputOwnershipModes: inputOwnershipModes,
-            transferModes: [.retainedHostAccess],
+            transferModes: transferModes,
             computeDevices: [
                 .main: [VisionComputeDeviceID(rawValue: "test")]
             ],
@@ -427,5 +428,42 @@ enum OpenVisionTestFixture {
             )
         )
         return (sample, UInt(bitPattern: baseAddress))
+    }
+
+    static func planarSample() throws -> CMImageSampleBuffer {
+        let dimensions = try CVPixelDimensions(width: 4, height: 2)
+        let luma = try CVPixelBufferPlaneLayout(
+            dimensions: dimensions,
+            bytesPerElement: 1,
+            bytesPerRow: 4
+        )
+        let chroma = try CVPixelBufferPlaneLayout(
+            dimensions: CVPixelDimensions(width: 2, height: 1),
+            bytesPerElement: 2,
+            bytesPerRow: 4
+        )
+        let layout = try CVPlanarPixelBufferLayout(
+            dimensions: dimensions,
+            pixelFormat: .yCbCr420BiPlanarVideoRange,
+            planes: [luma, chroma]
+        )
+        let pixelBuffer = try CVPlanarPixelBuffer<
+            CVOwnedPixelBufferStorage<
+                CVNoOpPixelBufferAccessCoordinator
+            >,
+            CVBufferAttachments
+        >(layout: layout)
+        return try CMImageSampleBuffer(
+            imageBuffer: pixelBuffer,
+            formatDescription: CMImmutableVideoFormatDescription(
+                dimensions: dimensions,
+                pixelFormat: .yCbCr420BiPlanarVideoRange
+            ),
+            timing: CMSampleTimingInfo(
+                duration: CMTime(value: 1, timescale: 30),
+                presentationTimeStamp: .zero,
+                decodeTimeStamp: .invalid
+            )
+        )
     }
 }

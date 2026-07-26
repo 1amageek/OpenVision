@@ -211,6 +211,19 @@ Every input must carry, when available:
 - ownership or lease information;
 - optional camera calibration and intrinsics.
 
+Layout, storage capability, and selected transfer are distinct contracts.
+`VisionImageLayout` describes packed or planar byte geometry. A storage
+descriptor states the memory domain, ownership mode, lendable access, and every
+transfer the concrete input can satisfy. Session configuration selects exactly
+one transfer mode. Provider capability and input capability must both contain
+that selected mode before execution.
+
+The sample-buffer input initializer is allowed to advertise only host-byte
+access because `CMSampleBuffer` exposes a scoped host borrow. Native-resource
+access requires a separate retained native lease; merely labeling host bytes as
+device or external memory is not sufficient. An unavailable native path must be
+rejected as a typed failure.
+
 ### 6.2 Output
 
 All observations must be immutable value types or immutable views over an
@@ -413,6 +426,13 @@ Required rules:
   access, imported external memory, retained host access, and staged
   host-to-device copy. Integrated physical memory alone is not proof of
   zero-copy accelerator access.
+- A staged transfer must declare a positive full-frame copy count. The initial
+  TensorRT path permits exactly one H2D copy. OpenVision itself performs zero
+  frame-byte copies.
+- The provider may borrow a source address only inside the synchronous borrow
+  closure. Asynchronous CUDA work must complete its source read, or copy into
+  provider-owned memory, before the closure returns and before
+  `releaseInput()`.
 - Pixel-format conversion must use a reusable buffer pool when in-place or
   backend import is impossible.
 - Image-sized preprocessing belongs to the concrete GPU provider. For the first

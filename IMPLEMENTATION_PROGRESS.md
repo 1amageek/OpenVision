@@ -10,6 +10,10 @@
 - [x] Task-local explicit provider scope
 - [x] Embedded-compatible composite provider session without dynamic casts
 - [x] `VisionImageInput` scoped byte borrow and early release contract
+- [x] Immutable packed and planar input layout snapshots
+- [x] Storage access, memory-domain, ownership, and transfer descriptors
+- [x] Explicit session transfer selection without fallback
+- [x] Address-preserving generic `Span` borrow with typed body failure
 - [x] Native behavior tests
 - [x] External-package provider conformance fixture
 - [x] Normal WASM compile, link, and runtime smoke
@@ -19,13 +23,37 @@
 
 | Check | Current evidence |
 |---|---|
-| Native OpenVision behavior | 14 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
+| Native OpenVision behavior | 22 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
+| Native sanitizers | The same 22 tests passed with Address Sanitizer and Thread Sanitizer |
 | External provider | 3 tests passed from a separate SwiftPM package without SPI or `@testable` |
-| Normal WASM | Build and `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
-| Embedded WASM | Build and `OpenVisionPortableSmoke` run passed with 2026-07-17 Embedded SDK |
-| Input storage | Address-preserving borrow and exactly-once release are tested |
+| Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
+| Embedded WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 Embedded SDK and Unicode data tables |
+| Input storage | Packed/planar layout, address identity, typed borrow failure, transfer validation, release, and unavailable native access are tested |
 | Provider dispatch | Stage-specific compute-device checks and active cancellation are tested |
 | Silent fallback | Missing provider, unsupported request, format, memory domain, ownership, and combined cleanup failure are tested |
+
+## Milestones
+
+| Milestone | Status | Gate evidence |
+|---|---|---|
+| 1. Input layout, storage, and transfer | Complete | 22 Native tests, ASan, TSan, and Normal/Embedded WASM debug/release runtime |
+| 2. Clock, coordinate, and calibration | Not started | Milestone 1 must close first |
+| 3. Jetson CUDA transfer probe | Not started | Requires milestone 2 |
+| 4. RG10 GPU preprocessing | Not started | Requires measured transfer probe |
+| 5. Semantic model manifest | Not started | Requires pose-paper and model evidence |
+| 6. TensorRT engine and provider | Not started | Requires manifest and preprocessing |
+| 7. Camera-to-pose observation | Not started | Requires real provider execution |
+
+## Known dependency defect
+
+The pinned Swift 6.4 regular-WASI runtime traps when a downstream executable
+constructs OpenCoreVideo's cross-module generic
+`CVExternalPixelBufferStorage` or `CVPackedPixelBuffer`. Embedded WASM does not
+show the same trap. The OpenVision runtime fixture therefore uses the public
+`CVPixelBuffer` protocol directly and proves the framework boundary without
+claiming that the affected OpenCoreVideo convenience path passed. This defect
+must be resolved in OpenCoreVideo before that generic path is release-ready on
+regular WASM.
 
 ## Tracked next work
 

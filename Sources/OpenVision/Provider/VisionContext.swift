@@ -2,6 +2,7 @@ public enum VisionContext {
     struct Environment: Sendable {
         let session: any VisionProviderSession
         let capabilities: VisionProviderCapabilities
+        let configuration: VisionSessionConfiguration
         let executionSequence: VisionExecutionSequence
     }
 
@@ -14,12 +15,18 @@ public enum VisionContext {
         operation:
             @Sendable () async throws(VisionError) -> Result
     ) async throws(VisionError) -> Result {
+        guard provider.capabilities.transferModes.contains(
+            configuration.transferMode
+        ) else {
+            throw .unsupportedTransferMode(configuration.transferMode)
+        }
         let session = try await provider.makeSession(
             configuration: configuration
         )
         let environment = Environment(
             session: session,
             capabilities: provider.capabilities,
+            configuration: configuration,
             executionSequence: VisionExecutionSequence()
         )
 

@@ -25,6 +25,21 @@ public struct VisionProviderCapabilities: Sendable, Hashable {
                 "maximumInFlightRequestCount"
             )
         }
+        guard !requests.isEmpty else {
+            throw .invalidProviderCapability("requests")
+        }
+        guard !pixelFormats.isEmpty else {
+            throw .invalidProviderCapability("pixelFormats")
+        }
+        guard !memoryDomains.isEmpty else {
+            throw .invalidProviderCapability("memoryDomains")
+        }
+        guard !inputOwnershipModes.isEmpty else {
+            throw .invalidProviderCapability("inputOwnershipModes")
+        }
+        guard !transferModes.isEmpty else {
+            throw .invalidProviderCapability("transferModes")
+        }
         for transferMode in transferModes {
             if case .stagedHostToDevice(let copyCount) = transferMode,
                copyCount <= 0 {
