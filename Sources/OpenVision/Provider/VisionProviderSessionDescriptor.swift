@@ -1,12 +1,12 @@
 public struct VisionProviderSessionDescriptor: Sendable, Hashable {
     public let id: VisionProviderSessionID
     public let provider: VisionProviderDescriptor
-    public let model: VisionModelDescriptor
+    public let model: VisionModelManifest
 
     public init(
         id: VisionProviderSessionID,
         provider: VisionProviderDescriptor,
-        model: VisionModelDescriptor
+        model: VisionModelManifest
     ) {
         self.id = id
         self.provider = provider

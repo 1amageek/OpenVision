@@ -18,6 +18,7 @@ Evidence baseline:
 | `NormalizedPoint` / `NormalizedRect` | Same names | Implemented | `Float`; throwing validation |
 | `RequestDescriptor` | Same name | Body and hand cases only | Unsupported families are absent |
 | `ComputeStage` / `MLComputeDevice` | `VisionComputeStage` / `VisionComputeDeviceID` | Implemented | No Core ML dependency |
+| Core ML request/model configuration | `VisionModelManifest` | Portable extension | Explicit stage graph, tensor semantics, preprocessing, provenance, and quality contract for TensorRT/Metal parity |
 | `request.perform(on:)` | Same operation shape | Implemented | Provider is injected by `VisionContext` |
 | `UUID` observation identity | `VisionObservationID` | Implemented | Two portable `UInt64` words |
 | `StatefulRequest` | Not declared | Pending | Requires ordered temporal-state contract |

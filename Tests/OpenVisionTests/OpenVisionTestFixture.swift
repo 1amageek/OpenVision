@@ -82,7 +82,7 @@ struct OpenVisionTestProvider: VisionProvider {
 
     let descriptor: VisionProviderDescriptor
     let capabilities: VisionProviderCapabilities
-    let model: VisionModelDescriptor
+    let model: VisionModelManifest
     let state: OpenVisionTestState
     let observationMarker: UInt64
     let behavior: Behavior
@@ -91,7 +91,7 @@ struct OpenVisionTestProvider: VisionProvider {
 
     init(
         id: String,
-        model: VisionModelDescriptor,
+        model: VisionModelManifest,
         pixelFormats: Set<CVPixelFormatType> = [.bgra32],
         memoryDomains: Set<VisionMemoryDomain> = [.host],
         inputOwnershipModes: Set<VisionInputOwnershipMode> = [.retained],
@@ -339,20 +339,144 @@ enum OpenVisionTestFixture {
     static func model(
         request: RequestDescriptor =
             .detectHumanBodyPoseRequest(.revision2)
-    ) throws(VisionError) -> VisionModelDescriptor {
-        VisionModelDescriptor(
+    ) throws -> VisionModelManifest {
+        let stageID = VisionModelStageID(rawValue: "pose")
+        let xTensorID = VisionModelTensorID(rawValue: "simcc-x")
+        let yTensorID = VisionModelTensorID(rawValue: "simcc-y")
+        let provenance = try VisionModelProvenance(
+            publisher: "OpenVisionTests",
+            architecture: "FixturePose",
+            sourceLocation: "fixture://pose",
+            sourceRevision: "1",
+            sourceDigest: try VisionModelProvenance.SHA256Digest(
+                hexadecimal: String(repeating: "0", count: 64)
+            ),
+            trainingDatasets: [],
+            citations: [],
+            licenseIdentifier: nil
+        )
+        let input = try VisionModelInputDescriptor(
+            width: 2,
+            height: 1,
+            source: .image,
+            resizePolicy: .scaleFit,
+            transferFunction: .sRGB,
+            tensorLayout: .channelsFirst,
+            channelOrder: .rgb,
+            elementType: .float32,
+            normalization: .zeroToOne
+        )
+        let stage = try VisionModelStageDescriptor(
+            id: stageID,
+            operation: .humanWholeBodyPose,
+            input: input,
+            outputs: [
+                try VisionModelTensorDescriptor(
+                    id: xTensorID,
+                    elementType: .float32,
+                    shape: [
+                        .batch(maximum: 1),
+                        .fixed(133),
+                        .fixed(4)
+                    ],
+                    meaning: .simCC(
+                        axis: .x,
+                        jointCount: 133,
+                        splitRatio: 2
+                    )
+                ),
+                try VisionModelTensorDescriptor(
+                    id: yTensorID,
+                    elementType: .float32,
+                    shape: [
+                        .batch(maximum: 1),
+                        .fixed(133),
+                        .fixed(2)
+                    ],
+                    meaning: .simCC(
+                        axis: .y,
+                        jointCount: 133,
+                        splitRatio: 2
+                    )
+                )
+            ],
+            provenance: provenance
+        )
+        let output = try VisionModelOutputDescriptor(
+            schemaRevision: "test-joints-1",
+            stage: stageID,
+            xDistribution: xTensorID,
+            yDistribution: yTensorID,
+            jointMappings: try bodyJointMappings(),
+            minimumJointConfidence: 0.1,
+            coordinateTransform:
+                .modelInputPixelsUpperLeftToNormalizedImageLowerLeft
+        )
+        return try VisionModelManifest(
             id: "test-pose",
             revision: "1",
             request: request,
-            input: try VisionModelInputDescriptor(
-                width: 2,
-                height: 1,
-                pixelFormat: .bgra32,
-                resizePolicy: .scaleFit,
-                normalization: .zeroToOne
-            ),
-            outputSchemaRevision: "test-joints-1"
+            stages: [stage],
+            output: output,
+            quality: try VisionModelQualityRequirements(
+                permittedPrecisions: [.float32],
+                maximumEndToEndLatencyMilliseconds: 100,
+                maximumPersonCount: 1
+            )
         )
+    }
+
+    private static func bodyJointMappings()
+        throws -> [VisionPoseJointMapping]
+    {
+        let direct: [
+            (HumanBodyPoseObservation.JointName, Int)
+        ] = [
+            (.nose, 0),
+            (.leftEye, 1),
+            (.rightEye, 2),
+            (.leftEar, 3),
+            (.rightEar, 4),
+            (.leftShoulder, 5),
+            (.rightShoulder, 6),
+            (.leftElbow, 7),
+            (.rightElbow, 8),
+            (.leftWrist, 9),
+            (.rightWrist, 10),
+            (.leftHip, 11),
+            (.rightHip, 12),
+            (.leftKnee, 13),
+            (.rightKnee, 14),
+            (.leftAnkle, 15),
+            (.rightAnkle, 16)
+        ]
+        var mappings = try direct.map {
+            try VisionPoseJointMapping(
+                target: .body($0.0),
+                source: .index($0.1)
+            )
+        }
+        mappings.append(
+            try VisionPoseJointMapping(
+                target: .body(.neck),
+                source: .midpoint(
+                    first: 5,
+                    second: 6,
+                    confidence: .minimum
+                )
+            )
+        )
+        mappings.append(
+            try VisionPoseJointMapping(
+                target: .body(.root),
+                source: .midpoint(
+                    first: 11,
+                    second: 12,
+                    confidence: .minimum
+                )
+            )
+        )
+        return mappings
     }
 
     static func ownedSample(

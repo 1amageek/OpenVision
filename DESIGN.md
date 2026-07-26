@@ -99,6 +99,30 @@ The first TensorRT path may report one staged host-to-device transfer. Direct
 device access or imported external memory may be advertised only after the
 provider proves import support and synchronization on the actual storage type.
 
+## Semantic model contract
+
+`VisionModelManifest` describes meaning; a provider artifact describes one
+compiled implementation of that meaning. OpenVision validates stage order,
+tensor shapes, region dependencies, joint vocabulary, coordinate conversion,
+quality bounds, and model provenance without importing a GPU runtime.
+
+```text
+VisionImageInput
+    -> VisionModelManifest
+        ├─ person detector input/output meaning
+        ├─ bounded ROI and region-affine contract
+        ├─ pose SimCC tensor meaning
+        └─ body/hand joint mapping
+            -> provider-selected compiled artifact
+                -> compact OpenVision observations
+```
+
+The manifest contains no model weights, engine bytes, CUDA pointer, Metal
+resource, or cache path. Those are provider-owned artifact concerns. RGB
+normalization is represented as three scale and three bias values so a provider
+can apply it directly in a fused tensor-writing kernel. No OpenVision operation
+copies frame bytes while validating or carrying the manifest.
+
 The portable runtime fixture owns one initialized stack word, lends its original
 address through a private `CVPixelBuffer` protocol conformance, constructs the
 real Core Media and OpenVision input path, and verifies address identity before

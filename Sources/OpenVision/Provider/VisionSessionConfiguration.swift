@@ -1,11 +1,11 @@
 public struct VisionSessionConfiguration: Sendable, Hashable {
-    public let model: VisionModelDescriptor
+    public let model: VisionModelManifest
     public let transferMode: VisionTransferMode
     public let computeDevices:
         [VisionComputeStage: VisionComputeDeviceID]
 
     public init(
-        model: VisionModelDescriptor,
+        model: VisionModelManifest,
         transferMode: VisionTransferMode = .retainedHostAccess,
         computeDevices:
             [VisionComputeStage: VisionComputeDeviceID] = [:]

@@ -399,15 +399,49 @@ package.
 
 ### 7.1 Model and artifact boundary
 
-OpenVision owns backend-neutral model identity and schema values:
+OpenVision owns a validated `VisionModelManifest`. The manifest is the semantic
+contract shared by every provider and contains:
 
 - semantic model identifier and revision;
 - request family and observation schema;
-- input dimensions, pixel interpretation, orientation policy, and color range;
-- resize, crop, letterbox, and normalization contract;
-- output tensor meaning, joint vocabulary, and coordinate convention;
+- an ordered stage graph with a logical operation for each stage;
+- source image or bounded region input, dimensions, transfer function, tensor
+  layout, channel order, element type, orientation, and letterbox values;
+- scale-fill, scale-fit, center-crop, or region-affine preprocessing semantics;
+- per-channel affine normalization;
+- typed output tensor identifiers, shapes, element types, and semantic meaning;
+- detector-to-region source identity, confidence threshold, count bound, and
+  expansion scale;
+- SimCC axes, joint count, and split ratio;
+- complete body and optional left/right hand joint mappings, including explicit
+  derived midpoint confidence;
+- output coordinate conversion and minimum joint confidence;
 - precision and quality requirements;
-- provenance and compatibility metadata.
+- publisher, architecture, source location, exact source revision, SHA-256,
+  training datasets, citations, and optional reviewed license identifier.
+
+Manifest construction fails when stage or tensor identities are duplicated,
+region dependencies do not resolve to an earlier person-detection tensor,
+SimCC shapes do not match the model input and split ratio, joint indices exceed
+the tensor vocabulary, or the request's public joint vocabulary is incomplete.
+Providers must not reinterpret or silently replace any of these semantics.
+
+The first research manifest is an ordered top-down pipeline:
+
+```text
+RTMDet-nano 320x320 person detection
+    -> confidence/count-bounded person regions
+        -> 1.25x aspect-preserving region affine crop
+            -> DWPose-m 256x192 COCO-WholeBody SimCC
+                -> OpenVision body + left/right hand joints
+```
+
+This is a bring-up baseline, not evidence of production quality for the Lume
+ceiling viewpoint. Real-camera evaluation must measure ceiling-view recall,
+joint stability, occlusion behavior, latency, and false positives before the
+manifest can be accepted for product use. Model and training-dataset license
+review remains a separate release gate; an absent license identifier means
+that review has not been completed.
 
 Provider packages own compiled runtime artifacts. A TensorRT engine and a
 Metal-compatible model artifact may implement the same semantic model revision,
@@ -461,6 +495,11 @@ Required rules:
   Jetson camera path, RG10 demosaic, orientation, mirroring, resize, letterbox,
   and normalization are implemented by `OpenVisionTensorRT` GPU targets rather
   than OpenVision core.
+- Per-channel normalization is applied directly while writing the provider
+  tensor. It must not materialize an intermediate RGB frame.
+- A region-affine stage is not semantically interchangeable with full-frame
+  scale-fill, scale-fit, or center-crop. A provider without region-affine
+  support must fail explicitly.
 - Observation output must not retain the full frame unless a request explicitly
   documents that behavior.
 - Benchmarks must report frame size, frame rate, copy count, allocations,

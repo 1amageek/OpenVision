@@ -23,13 +23,19 @@
 - [x] External-package provider conformance fixture
 - [x] Normal WASM compile, link, and runtime smoke
 - [x] Embedded WASM compile, link, and runtime smoke
+- [x] Validated backend-neutral semantic model manifest
+- [x] Ordered model stages and typed detector-to-region dependencies
+- [x] Tensor shape, element type, meaning, and SimCC contracts
+- [x] Complete request-specific body and hand joint vocabulary validation
+- [x] Exact checkpoint provenance and SHA-256 identity
+- [x] Per-channel tensor normalization and region-affine semantics
 
 ## Verification evidence
 
 | Check | Current evidence |
 |---|---|
-| Native OpenVision behavior | 31 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
-| Native sanitizers | The same 31 tests passed with Address Sanitizer and Thread Sanitizer |
+| Native OpenVision behavior | 40 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
+| Native sanitizers | The same 40 tests passed with Address Sanitizer and Thread Sanitizer |
 | External provider | 3 tests passed against public commit `673ce03` from a separate SwiftPM package without SPI or `@testable` |
 | TensorRT package compatibility | 3 runtime-boundary tests passed against public commit `673ce03` |
 | Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
@@ -44,9 +50,9 @@
 |---|---|---|
 | 1. Input layout, storage, and transfer | Complete | 22 Native tests, ASan, TSan, and Normal/Embedded WASM debug/release runtime |
 | 2. Clock, coordinate, and calibration | Complete | 31 Native tests, ASan, TSan, public external-provider and TensorRT compatibility, and Normal/Embedded WASM debug/release runtime |
-| 3. Jetson CUDA transfer probe | Not started | Requires milestone 2 |
-| 4. RG10 GPU preprocessing | Not started | Requires measured transfer probe |
-| 5. Semantic model manifest | Not started | Requires pose-paper and model evidence |
+| 3. Jetson CUDA transfer probe | Complete | Public `OpenVisionTensorRT` commit `dc27ec9`; real CUDA transfer, ownership, byte verification, allocation, and p50/p95 evidence |
+| 4. RG10 GPU preprocessing | Complete | Public `OpenVisionTensorRT` commit `eb7d761`; 25 differential/golden cases, public Swift path, one H2D, one kernel, zero post-prepare frame allocations, and p50/p95 evidence |
+| 5. Semantic model manifest | Core complete; external publication pending | 40 Native tests, ASan, TSan, Normal/Embedded WASM debug/release runtime, and official RTMDet/DWPose evidence |
 | 6. TensorRT engine and provider | Not started | Requires manifest and preprocessing |
 | 7. Camera-to-pose observation | Not started | Requires real provider execution |
 
@@ -65,10 +71,12 @@ regular WASM.
 
 - [ ] Add a stateful request only with ordered timestamp, reset, cancellation,
   and bounded-history tests.
-- [ ] Select a semantic body/hand model before implementing successful
-  TensorRT pose inference.
-- [ ] Implement and measure RG10 CUDA preprocessing, one-copy H2D input,
-  TensorRT execution, decoding, and input-consumed synchronization.
+- [ ] Implement the matching RTMDet-nano and DWPose-m TensorRT engines,
+  region-affine preprocessing, decoding, and provider execution.
+- [ ] Complete checkpoint and training-dataset license review before product
+  distribution.
+- [ ] Evaluate ceiling-view accuracy and false positives before accepting the
+  bring-up model as a product model.
 - [ ] Measure 1920x1080 RG10 30 FPS behavior, allocation count, copy count,
   p50/p95 latency, resident/device memory, power, and thermal state on Jetson.
 
