@@ -30,7 +30,8 @@
 |---|---|
 | Native OpenVision behavior | 31 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
 | Native sanitizers | The same 31 tests passed with Address Sanitizer and Thread Sanitizer |
-| External provider | 3 tests passed from a separate SwiftPM package without SPI or `@testable` |
+| External provider | 3 tests passed against public commit `673ce03` from a separate SwiftPM package without SPI or `@testable` |
+| TensorRT package compatibility | 3 runtime-boundary tests passed against public commit `673ce03` |
 | Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
 | Embedded WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 Embedded SDK and Unicode data tables |
 | Input storage | Packed/planar layout, address identity, typed borrow failure, transfer validation, release, and unavailable native access are tested |
@@ -42,7 +43,7 @@
 | Milestone | Status | Gate evidence |
 |---|---|---|
 | 1. Input layout, storage, and transfer | Complete | 22 Native tests, ASan, TSan, and Normal/Embedded WASM debug/release runtime |
-| 2. Clock, coordinate, and calibration | Verification in progress | 31 Native tests, ASan, TSan, and Normal/Embedded WASM debug/release runtime |
+| 2. Clock, coordinate, and calibration | Complete | 31 Native tests, ASan, TSan, public external-provider and TensorRT compatibility, and Normal/Embedded WASM debug/release runtime |
 | 3. Jetson CUDA transfer probe | Not started | Requires milestone 2 |
 | 4. RG10 GPU preprocessing | Not started | Requires measured transfer probe |
 | 5. Semantic model manifest | Not started | Requires pose-paper and model evidence |
