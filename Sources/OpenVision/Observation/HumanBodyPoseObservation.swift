@@ -78,7 +78,8 @@ public struct HumanBodyPoseObservation:
         guard confidence.isFinite, (0 ... 1).contains(confidence) else {
             throw .invalidConfidence(confidence)
         }
-        for (name, joint) in joints {
+        for name in JointName.allCases {
+            guard let joint = joints[name] else { continue }
             guard name.rawValue == joint.jointName else {
                 throw .jointNameMismatch(
                     expected: name.rawValue,

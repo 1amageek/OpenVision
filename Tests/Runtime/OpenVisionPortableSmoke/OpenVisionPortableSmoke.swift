@@ -110,6 +110,14 @@ enum OpenVisionPortableSmoke {
                 .stagedHostToDevice(fullFrameCopyCount: 1)
             )
         )
+        _ = try HumanBodyPoseObservation(
+            id: VisionObservationID(high: 1, low: 1),
+            confidence: 1,
+            timeRange: nil,
+            originatingRequestDescriptor: nil,
+            joints: [:],
+            provenance: input.observationProvenance
+        )
         precondition(input.releaseInput())
         precondition(!input.releaseInput())
     }
