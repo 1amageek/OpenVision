@@ -23,6 +23,7 @@ public indirect enum VisionError: Error, Sendable, Equatable {
     case imageAccessFailure(operation: String)
     case inputReleased
     case temporal(VisionTemporalError)
+    case tracking(VisionTrackingError)
     case coordinate(VisionCoordinateError)
     case calibration(VisionCalibrationError)
     case invalidGeometry(VisionGeometryError)

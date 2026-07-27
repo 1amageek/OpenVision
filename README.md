@@ -48,15 +48,33 @@ Pose observation construction requires explicit provenance, and coordinate
 transforms return a located point carrying the destination space and applied
 revision.
 
+## Stateful pose tracking
+
+`TrackHumanBodyPoseRequest` preserves a bounded visual track across ordered
+frames. Inputs require a `VisionFrameID` and `VisionClockDomain`. The request
+performs the configured GPU-backed body-pose inference through the injected
+provider, then retains only compact joint metadata for association.
+
+```text
+camera frame -> provider Pose inference -> visual track ID
+                                      X-> gesture or person identity
+```
+
+The track ID is scoped to one tracking session and reset epoch. It is not a
+person identifier, and OpenVision does not interpret the sequence as a gesture.
+Call `reset()` to start a new epoch and `shutdown()` when the request is no
+longer used.
+
 ## Verification
 
 ```bash
 perl -e 'alarm 90; exec @ARGV' -- \
+  env TOOLCHAINS=org.swift.64202607171a \
   xcodebuild test \
     -scheme OpenVision-Package \
-    -destination 'platform=macOS' \
+    -destination 'platform=macOS,arch=arm64' \
     -maximum-test-execution-time-allowance 60 \
-    SWIFT_EXEC="$HOME/Library/Developer/Toolchains/swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/bin/swiftc"
+    "LD_RUNPATH_SEARCH_PATHS=\$(inherited) $HOME/Library/Developer/Toolchains/swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a.xctoolchain/usr/lib/swift/macosx/testing"
 
 TOOLCHAINS=org.swift.64202607171a xcrun swift build \
   --swift-sdk swift-6.4.x-DEVELOPMENT-SNAPSHOT-2026-07-17-a_wasm \

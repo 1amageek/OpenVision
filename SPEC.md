@@ -615,6 +615,26 @@ provider receives a typed unavailable or unsupported result.
 - Verify gaps, out-of-order timestamps, reset, concurrent calls, and bounded
   state.
 
+The first implemented temporal request is `TrackHumanBodyPoseRequest`. It
+delegates each analyzed frame to `DetectHumanBodyPoseRequest`, then associates
+the returned compact joint geometry inside OpenVision. It must not retain image
+buffers, provider tensors, or model-runtime objects between frames. Its track
+identifier is a visual hypothesis scoped to the request's session and epoch,
+not a persistent person identity.
+
+Revision 1 uses bounded spatial joint-distance association. A skipped analysis
+caused by `frameAnalysisSpacing` is not a missing observation and does not age
+a track. An analyzed frame with no matching pose increments the missing-analysis
+count. A pose returning within that bound is `reacquired`; after the bound is
+exceeded the old track ends and a later pose receives a new identifier.
+
+Each input must provide a frame identifier and clocked presentation timestamp.
+One request accepts one monotonically increasing source and clock domain until
+reset. Concurrent execution on the same stateful request is rejected with a
+typed failure rather than being reordered implicitly. `reset()` increments the
+identifier epoch and clears ordering state; `shutdown()` releases all retained
+compact state and rejects later execution.
+
 ### Phase 5: compatibility expansion
 
 - Add request families only with real implementation paths and behavioral

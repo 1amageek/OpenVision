@@ -88,6 +88,9 @@ public struct VisionModelManifest: Sendable, Hashable {
             .detectHumanBodyPoseRequest,
             .humanWholeBodyPose
         ), (
+            .trackHumanBodyPoseRequest,
+            .humanWholeBodyPose
+        ), (
             .detectHumanHandPoseRequest,
             .humanHandPose
         ):
@@ -275,7 +278,8 @@ public struct VisionModelManifest: Sendable, Hashable {
         }
 
         switch request {
-        case .detectHumanBodyPoseRequest:
+        case .detectHumanBodyPoseRequest,
+             .trackHumanBodyPoseRequest:
             for mapping in mappings {
                 if case .hand(nil, _) = mapping.target {
                     throw .incompatibleJointTargetForRequest(

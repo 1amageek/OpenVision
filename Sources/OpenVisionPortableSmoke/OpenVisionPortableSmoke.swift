@@ -2,9 +2,10 @@ import OpenVision
 
 @main
 enum OpenVisionPortableSmoke {
-    static func main() {
+    static func main() async {
         do {
             try runPortableSmoke()
+            try await runTrackingSmoke()
         } catch {
             fatalError("OpenVision portable smoke failed")
         }
@@ -118,6 +119,25 @@ enum OpenVisionPortableSmoke {
     ) -> UInt? {
         bytes.withUnsafeBufferPointer {
             $0.baseAddress.map { UInt(bitPattern: $0) }
+        }
+    }
+
+    private static func runTrackingSmoke() async throws {
+        let sessionID = VisionTrackingSessionID(high: 1, low: 2)
+        let request = try TrackHumanBodyPoseRequest(
+            trackingSessionID: sessionID
+        )
+        let epoch = try await request.reset()
+        precondition(epoch == 1)
+        try await request.shutdown()
+
+        do {
+            _ = try await request.reset()
+            preconditionFailure("A shut-down tracking request was reset")
+        } catch VisionError.tracking(
+            .requestShutDown(let actualSessionID)
+        ) {
+            precondition(actualSessionID == sessionID)
         }
     }
 }

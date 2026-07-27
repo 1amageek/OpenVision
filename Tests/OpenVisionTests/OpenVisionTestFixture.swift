@@ -88,6 +88,8 @@ struct OpenVisionTestProvider: VisionProvider {
     let behavior: Behavior
     let shutdownFailure: VisionError?
     let inferenceGate: OpenVisionTestInferenceGate?
+    let emptyBodyPoseFrameSequences: Set<UInt64>
+    let bodyPoseXCoordinatesByFrameSequence: [UInt64: [Float]]
 
     init(
         id: String,
@@ -100,6 +102,8 @@ struct OpenVisionTestProvider: VisionProvider {
         behavior: Behavior = .success,
         shutdownFailure: VisionError? = nil,
         inferenceGate: OpenVisionTestInferenceGate? = nil,
+        emptyBodyPoseFrameSequences: Set<UInt64> = [],
+        bodyPoseXCoordinatesByFrameSequence: [UInt64: [Float]] = [:],
         state: OpenVisionTestState = OpenVisionTestState()
     ) throws(VisionError) {
         descriptor = VisionProviderDescriptor(
@@ -126,6 +130,10 @@ struct OpenVisionTestProvider: VisionProvider {
         self.behavior = behavior
         self.shutdownFailure = shutdownFailure
         self.inferenceGate = inferenceGate
+        self.emptyBodyPoseFrameSequences =
+            emptyBodyPoseFrameSequences
+        self.bodyPoseXCoordinatesByFrameSequence =
+            bodyPoseXCoordinatesByFrameSequence
     }
 
     func makeSession(
@@ -148,7 +156,11 @@ struct OpenVisionTestProvider: VisionProvider {
             observationMarker: observationMarker,
             behavior: behavior,
             shutdownFailure: shutdownFailure,
-            inferenceGate: inferenceGate
+            inferenceGate: inferenceGate,
+            emptyBodyPoseFrameSequences:
+                emptyBodyPoseFrameSequences,
+            bodyPoseXCoordinatesByFrameSequence:
+                bodyPoseXCoordinatesByFrameSequence
         )
     }
 }
@@ -163,6 +175,8 @@ actor OpenVisionTestProviderSession:
     private let behavior: OpenVisionTestProvider.Behavior
     private let shutdownFailure: VisionError?
     private let inferenceGate: OpenVisionTestInferenceGate?
+    private let emptyBodyPoseFrameSequences: Set<UInt64>
+    private let bodyPoseXCoordinatesByFrameSequence: [UInt64: [Float]]
     private var isShutDown = false
     private var activeExecutionID: VisionExecutionID?
     private var cancelledExecutionIDs: Set<VisionExecutionID> = []
@@ -173,7 +187,9 @@ actor OpenVisionTestProviderSession:
         observationMarker: UInt64,
         behavior: OpenVisionTestProvider.Behavior,
         shutdownFailure: VisionError?,
-        inferenceGate: OpenVisionTestInferenceGate?
+        inferenceGate: OpenVisionTestInferenceGate?,
+        emptyBodyPoseFrameSequences: Set<UInt64>,
+        bodyPoseXCoordinatesByFrameSequence: [UInt64: [Float]]
     ) {
         self.descriptor = descriptor
         self.state = state
@@ -181,6 +197,10 @@ actor OpenVisionTestProviderSession:
         self.behavior = behavior
         self.shutdownFailure = shutdownFailure
         self.inferenceGate = inferenceGate
+        self.emptyBodyPoseFrameSequences =
+            emptyBodyPoseFrameSequences
+        self.bodyPoseXCoordinatesByFrameSequence =
+            bodyPoseXCoordinatesByFrameSequence
     }
 
     func bodyPoseObservations(
@@ -208,34 +228,50 @@ actor OpenVisionTestProviderSession:
         }
         try failureIfConfigured()
 
-        let point: NormalizedPoint
-        do {
-            point = try NormalizedPoint(x: 0.5, y: 0.25)
-        } catch let error {
-            throw .invalidGeometry(error)
+        if let frameSequence = input.frameID?.sequence,
+           emptyBodyPoseFrameSequences.contains(frameSequence) {
+            return []
         }
-        let joint = try Joint(
-            location: point,
-            jointName:
-                HumanBodyPoseObservation.JointName.nose.rawValue,
-            confidence: 0.9
-        )
+
+        let xCoordinates = input.frameID.flatMap {
+            bodyPoseXCoordinatesByFrameSequence[$0.sequence]
+        } ?? [0.5]
         let timeRange = CMTimeRange(
             start: input.timing.presentationTimeStamp,
             duration: input.timing.duration
         )
-        let observation = try HumanBodyPoseObservation(
-            id: VisionObservationID(
-                high: observationMarker,
-                low: executionID.sequence
-            ),
-            confidence: 0.9,
-            timeRange: timeRange,
-            originatingRequestDescriptor: request.descriptor,
-            joints: [.nose: joint],
-            provenance: input.observationProvenance
-        )
-        return [observation]
+        var observations: [HumanBodyPoseObservation] = []
+        observations.reserveCapacity(xCoordinates.count)
+        for (index, xCoordinate) in xCoordinates.enumerated() {
+            let point: NormalizedPoint
+            do {
+                point = try NormalizedPoint(x: xCoordinate, y: 0.25)
+            } catch let error {
+                throw .invalidGeometry(error)
+            }
+            let joint = try Joint(
+                location: point,
+                jointName:
+                    HumanBodyPoseObservation.JointName.nose.rawValue,
+                confidence: 0.9
+            )
+            observations.append(
+                try HumanBodyPoseObservation(
+                    id: VisionObservationID(
+                        high: observationMarker,
+                        low: xCoordinates.count == 1
+                            ? executionID.sequence
+                            : UInt64(index)
+                    ),
+                    confidence: 0.9,
+                    timeRange: timeRange,
+                    originatingRequestDescriptor: request.descriptor,
+                    joints: [.nose: joint],
+                    provenance: input.observationProvenance
+                )
+            )
+        }
+        return observations
     }
 
     func handPoseObservations(
@@ -480,7 +516,11 @@ enum OpenVisionTestFixture {
     }
 
     static func ownedSample(
-        pixelFormat: CVPixelFormatType = .bgra32
+        pixelFormat: CVPixelFormatType = .bgra32,
+        presentationTimeStamp: CMTime = CMTime(
+            value: 10,
+            timescale: 30
+        )
     ) throws -> CMImageSampleBuffer {
         let dimensions = try CVPixelDimensions(width: 2, height: 1)
         let pixelBuffer = try CVPackedPixelBuffer(
@@ -497,10 +537,7 @@ enum OpenVisionTestFixture {
             ),
             timing: CMSampleTimingInfo(
                 duration: CMTime(value: 1, timescale: 30),
-                presentationTimeStamp: CMTime(
-                    value: 10,
-                    timescale: 30
-                ),
+                presentationTimeStamp: presentationTimeStamp,
                 decodeTimeStamp: .invalid
             )
         )

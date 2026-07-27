@@ -5,4 +5,7 @@ public enum RequestDescriptor: Sendable, Hashable {
     case detectHumanHandPoseRequest(
         DetectHumanHandPoseRequest.Revision
     )
+    case trackHumanBodyPoseRequest(
+        TrackHumanBodyPoseRequest.Revision
+    )
 }

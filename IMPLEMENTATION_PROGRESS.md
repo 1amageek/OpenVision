@@ -30,17 +30,24 @@
 - [x] Complete request-specific body and hand joint vocabulary validation
 - [x] Exact checkpoint provenance and SHA-256 identity
 - [x] Per-channel tensor normalization and region-affine semantics
+- [x] Apple-shaped `StatefulRequest` lifecycle contract
+- [x] Session- and epoch-scoped `VisionTrackID`
+- [x] Backend-neutral stateful body-pose tracking over compact joints
+- [x] Ordered frame/timestamp validation, frame analysis spacing, reset, and
+  shutdown
+- [x] Bounded gaps, reacquisition, multi-pose association, cancellation, and
+  concurrent-call rejection
 
 ## Verification evidence
 
 | Check | Current evidence |
 |---|---|
-| Native OpenVision behavior | 41 tests passed with `xcodebuild test` and Swift 6.4 snapshot |
-| Native sanitizers | The same 41 tests passed with Address Sanitizer and Thread Sanitizer |
-| External provider | Public `OpenVisionProviderFixture` commit `c0ee50a` passed 3 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `69d0db2` without SPI or `@testable` |
-| TensorRT package compatibility | Public `OpenVisionTensorRT` commit `cf85b6e` passed 19 Native, Address Sanitizer, and Thread Sanitizer tests against OpenVision `69d0db2` |
-| Normal WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 SDK |
-| Embedded WASM | Debug and release build plus `OpenVisionPortableSmoke` run passed with 2026-07-17 Embedded SDK and Unicode data tables |
+| Native OpenVision behavior | 54 tests passed with `xcodebuild test` and the 2026-07-17 Swift 6.4 snapshot |
+| Stateful tracking sanitizers | The 13 stateful tracking tests passed independently with Address Sanitizer and Thread Sanitizer |
+| External provider | The public `OpenVisionProviderFixture` passed against this local OpenVision through public API only, without SPI or `@testable` |
+| TensorRT package compatibility | A clean integration copy of the current `OpenVisionTensorRT` worktree passed 34 tests against this local OpenVision; the source worktree was not modified |
+| Normal WASM | Debug and release build, link, and `OpenVisionPortableSmoke` execution passed with the 2026-07-17 SDK, including tracking actor reset/shutdown behavior |
+| Embedded WASM | Debug and release build, link, and `OpenVisionPortableSmoke` execution passed with the 2026-07-17 Embedded SDK and WASM Unicode data tables, including tracking actor reset/shutdown behavior |
 | Input storage | Packed/planar layout, address identity, typed borrow failure, transfer validation, release, and unavailable native access are tested |
 | Provider dispatch | Stage-specific compute-device checks and active cancellation are tested |
 | Silent fallback | Missing provider, unsupported request, format, memory domain, ownership, and combined cleanup failure are tested |
@@ -54,8 +61,9 @@
 | 3. Jetson CUDA transfer probe | Complete | Public `OpenVisionTensorRT` commit `dc27ec9`; real CUDA transfer, ownership, byte verification, allocation, and p50/p95 evidence |
 | 4. RG10 GPU preprocessing | Complete | Public `OpenVisionTensorRT` commit `eb7d761`; 25 differential/golden cases, public Swift path, one H2D, one kernel, zero post-prepare frame allocations, and p50/p95 evidence |
 | 5. Semantic model manifest | Complete | 41 core tests, official ONNX output type/shape verification, sanitizers, Normal/Embedded WASM, published provider fixtures, and real Jetson CUDA differential execution |
-| 6. TensorRT engine and provider | In progress | Official RTMDet ONNX export checked with ONNX checker and ONNX Runtime; DWPose export and Jetson TensorRT engine execution remain |
-| 7. Camera-to-pose observation | Not started | Requires real provider execution |
+| 6. TensorRT engine and provider | Complete | Current TensorRT package implements RTMDet/DWPose execution, provider conformance, compact observation construction, sustained fixture execution, and passes 34 local integration tests |
+| 7. Camera-to-pose observation | In progress | Production GPU provider succeeds on 1920x1080 RG10 fixtures; a real WAVESHARE-26185 camera frame lease and sustained capture remain |
+| 8. Stateful body-pose tracking | Complete | 13 behavior tests cover identity continuity, reset epoch, spacing, gaps, reacquisition, two poses, bounded capacity, metadata, zero-copy borrow identity, source/clock/frame ordering, concurrency, cancellation, and shutdown; Native sanitizers and WASM/Embedded smoke pass |
 
 ## Resolved dependency defect
 
@@ -69,10 +77,11 @@ debug and release runtimes passed against the remote OpenCoreVideo revision on
 
 ## Tracked next work
 
-- [ ] Add a stateful request only with ordered timestamp, reset, cancellation,
-  and bounded-history tests.
-- [ ] Implement the matching RTMDet-nano and DWPose-m TensorRT engines,
-  region-affine preprocessing, decoding, and provider execution.
+- [ ] Connect the WAVESHARE-26185 camera lease to the production TensorRT
+  provider and measure sustained 1920x1080 RG10 at 30 FPS.
+- [ ] Evaluate temporal track continuity, ID switches, occlusion recovery, and
+  crossing paths on ceiling-view sequences before treating spatial tracking as
+  product-quality identity evidence.
 - [ ] Complete checkpoint and training-dataset license review before product
   distribution.
 - [ ] Evaluate ceiling-view accuracy and false positives before accepting the

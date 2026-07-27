@@ -211,10 +211,40 @@ The shared-state contract is identical on every target:
 | Input sample owner | `Mutex<State>` | `Mutex<State>` | `Mutex<State>` | `isReleased` and `retainedImageBuffer()` / `releaseInput()` / idempotent reference release |
 | Execution sequence | `Mutex<UInt64>` | `Mutex<UInt64>` | `Mutex<UInt64>` | `next(sessionID:)` performs checked increment / owner deinit |
 | Provider device lifecycle | provider actor | provider actor | provider actor | request methods / cancellation and `shutdown()` |
+| Stateful tracking configuration | `Mutex<ConfigurationState>` | `Mutex<ConfigurationState>` | `Mutex<ConfigurationState>` | property snapshots / setters / request owner release |
+| Stateful body-pose tracking | request-owned actor | request-owned actor | request-owned actor | ordered `process()` / `reset()` / `shutdown()` |
 
 There is no `hasFeature(Embedded)` or `canImport(Synchronization)` branch in
 these paths. Locks contain only short memory access; pixel borrowing, provider
 callbacks, `await`, and shutdown occur after the lock is released.
+
+## Stateful body-pose tracking
+
+`TrackHumanBodyPoseRequest` is backend-neutral orchestration over the existing
+body-pose provider request. It snapshots mutable request configuration under a
+short `Mutex`, releases the lock, then invokes provider inference. Ordered
+temporal state lives in one actor because inference suspends and frame order is
+part of correctness.
+
+```text
+VisionImageInput lease
+    -> DetectHumanBodyPoseRequest
+        -> provider GPU inference
+            -> compact HumanBodyPoseObservation values
+                -> request-owned tracking actor
+                    -> VisionTrackReference values
+```
+
+The actor retains only a bounded dictionary of joint points, timestamps,
+confidence, and counters. It never retains the input lease, pixels, staging
+memory, CUDA resources, TensorRT tensors, or provider session. Frame data
+therefore follows the existing zero-copy or explicitly one-H2D-copy provider
+contract and is releasable immediately after inference consumes it.
+
+The first revision uses deterministic bounded joint-distance association. This
+is visual continuity, not semantic actor identity. Crossing-path identity,
+appearance re-identification, and gesture meaning require separately specified
+evidence; the implementation must not silently claim those semantics.
 
 ## Portable differences from Apple
 
