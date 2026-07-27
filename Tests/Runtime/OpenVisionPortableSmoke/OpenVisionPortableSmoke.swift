@@ -134,10 +134,10 @@ enum OpenVisionPortableSmoke {
         do {
             _ = try await request.reset()
             preconditionFailure("A shut-down tracking request was reset")
-        } catch VisionError.tracking(
-            .requestShutDown(let actualSessionID)
-        ) {
-            precondition(actualSessionID == sessionID)
+        } catch {
+            precondition(
+                error == .tracking(.requestShutDown(sessionID))
+            )
         }
     }
 }

@@ -33,7 +33,8 @@ let package = Package(
         ),
         .executableTarget(
             name: "OpenVisionPortableSmoke",
-            dependencies: ["OpenVision"]
+            dependencies: ["OpenVision"],
+            path: "Tests/Runtime/OpenVisionPortableSmoke"
         ),
         .testTarget(
             name: "OpenVisionTests",
