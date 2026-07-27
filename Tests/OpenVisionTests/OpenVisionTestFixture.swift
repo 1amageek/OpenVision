@@ -574,9 +574,7 @@ enum OpenVisionTestFixture {
             planes: [luma, chroma]
         )
         let pixelBuffer = try CVPlanarPixelBuffer<
-            CVOwnedPixelBufferStorage<
-                CVNoOpPixelBufferAccessCoordinator
-            >,
+            CVOwnedPixelBufferStorage,
             CVBufferAttachments
         >(layout: layout)
         return try CMImageSampleBuffer(

@@ -131,12 +131,11 @@ Element types preserve the exported representation, including 64-bit class
 indices.
 
 The portable runtime fixture owns one initialized stack word, lends its original
-address through a private `CVPixelBuffer` protocol conformance, constructs the
-real Core Media and OpenVision input path, and verifies address identity before
-release. The fixture is intentionally not `CVPackedPixelBuffer`: the pinned
-Swift 6.4 regular-WASI runtime traps while constructing that cross-module
-generic class. This dependency defect is tracked separately and is not hidden
-by claiming that the generic convenience path passed.
+address through `CVExternalPixelBufferStorage` and the fixed-layout
+`CVPackedPixelBuffer`, constructs the real Core Media and OpenVision input path,
+and verifies address identity before release. The release handler executes while
+the stack owner remains alive and performs no deallocation. This exercises the
+cross-module production buffer path without copying frame bytes.
 
 ## Clock, coordinate, and calibration provenance
 

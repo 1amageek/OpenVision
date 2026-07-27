@@ -57,16 +57,15 @@
 | 6. TensorRT engine and provider | In progress | Official RTMDet ONNX export checked with ONNX checker and ONNX Runtime; DWPose export and Jetson TensorRT engine execution remain |
 | 7. Camera-to-pose observation | Not started | Requires real provider execution |
 
-## Known dependency defect
+## Resolved dependency defect
 
-The pinned Swift 6.4 regular-WASI runtime traps when a downstream executable
-constructs OpenCoreVideo's cross-module generic
-`CVExternalPixelBufferStorage` or `CVPackedPixelBuffer`. Embedded WASM does not
-show the same trap. The OpenVision runtime fixture therefore uses the public
-`CVPixelBuffer` protocol directly and proves the framework boundary without
-claiming that the affected OpenCoreVideo convenience path passed. This defect
-must be resolved in OpenCoreVideo before that generic path is release-ready on
-regular WASM.
+OpenCoreVideo `adb0ff9` replaced the affected cross-module dependent class
+layouts with fixed-layout `CVExternalPixelBufferStorage` and
+`CVPackedPixelBuffer` owners. OpenVision now uses that production path in its
+portable runtime fixture and verifies the original storage address through
+OpenCoreMedia and `VisionImageInput`. Native tests and regular/Embedded WASM
+debug and release runtimes passed against the remote OpenCoreVideo revision on
+2026-07-27; the previous generic-layout runtime trap is no longer an open gate.
 
 ## Tracked next work
 

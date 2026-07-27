@@ -29,10 +29,14 @@ enum OpenVisionPortableSmoke {
             bytesPerPixel: 4,
             bytesPerRow: 8
         )
-        let pixelBuffer = PortablePixelBuffer(
-            layout: layout,
+        let storage = try CVExternalPixelBufferStorage(
             baseAddress: baseAddress,
-            byteCount: MemoryLayout<UInt64>.size
+            byteCount: MemoryLayout<UInt64>.size,
+            accessCapabilities: [.read]
+        ) { _, _ in }
+        let pixelBuffer = try CVPackedPixelBuffer(
+            layout: layout,
+            storage: storage
         )
         let sample = try CMImageSampleBuffer(
             imageBuffer: pixelBuffer,
@@ -115,67 +119,5 @@ enum OpenVisionPortableSmoke {
         bytes.withUnsafeBufferPointer {
             $0.baseAddress.map { UInt(bitPattern: $0) }
         }
-    }
-}
-
-/// A test-only non-owning pixel-buffer fixture for runtime verification.
-///
-/// The stack word in `runPortableSmoke()` owns the memory and outlives every
-/// synchronous borrow. The address never escapes a borrow callback, the byte
-/// count is fixed to the initialized word, and no allocation or byte copy is
-/// performed by this fixture.
-private final class PortablePixelBuffer: CVPixelBuffer {
-    let layout: CVPackedPixelBufferLayout
-    let byteCount: Int
-    let accessCapabilities: CVPixelBufferAccessCapabilities = [.read]
-    let attachments = CVBufferAttachments()
-
-    private let baseAddressBits: UInt
-
-    var dimensions: CVPixelDimensions {
-        layout.dimensions
-    }
-
-    var pixelFormat: CVPixelFormatType {
-        layout.pixelFormat
-    }
-
-    var bytesPerRow: Int {
-        layout.bytesPerRow
-    }
-
-    init(
-        layout: CVPackedPixelBufferLayout,
-        baseAddress: UnsafeMutableRawPointer,
-        byteCount: Int
-    ) {
-        self.layout = layout
-        self.baseAddressBits = UInt(bitPattern: baseAddress)
-        self.byteCount = byteCount
-    }
-
-    func withReadBytes(
-        _ body: (borrowing Span<UInt8>) -> Void
-    ) throws(CVPixelBufferError) {
-        guard
-            let baseAddress = UnsafeMutableRawPointer(
-                bitPattern: baseAddressBits
-            )
-        else {
-            throw .storageReleased
-        }
-        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
-        body(
-            Span(
-                _unsafeStart: UnsafePointer(bytes),
-                count: byteCount
-            )
-        )
-    }
-
-    func withWriteBytes(
-        _ body: (inout MutableSpan<UInt8>) -> Void
-    ) throws(CVPixelBufferError) {
-        throw .unsupportedAccess(.write)
     }
 }
